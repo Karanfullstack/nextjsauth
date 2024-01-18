@@ -1,9 +1,12 @@
 "use client";
-
-import {ArrowRight} from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import Link from "next/link";
-import {FormEvent, useState} from "react";
+import { FormEvent, useState } from "react";
+import axios from "axios";
+import { RegisterTypeError } from "@/types";
+import { useRouter } from "next/navigation";
 export default function RegisterPage() {
+	const router = useRouter();
 	const [authState, setAuthState] = useState({
 		name: "",
 		email: "",
@@ -11,10 +14,35 @@ export default function RegisterPage() {
 		password_confirmation: "",
 	});
 
+	const [loading, setLoading] = useState<boolean>(false);
+	const [errors, setErrors] = useState<RegisterTypeError>({});
+
 	const submitForm = (event: FormEvent<HTMLElement>) => {
 		event.preventDefault();
+		setLoading(true);
 		console.log(authState);
+		axios
+			.post("/api/auth/register", authState)
+			.then((res) => {
+				const { data } = res;
+				if (data.status == 200) {
+					console.log("User Signed Up	Successfully");
+					console.log(data);
+					router.push("/login?message=Successfully Registered");
+				} else if (data.status === 400) {
+					setErrors(data?.errors);
+					console.log(data);
+				}
+			})
+			.catch((err) => {
+				console.log(err);
+				setLoading(false);
+			})
+			.finally(() => {
+				setLoading(false);
+			});
 	};
+
 	return (
 		<section className=" ">
 			<div className="grid grid-cols-1 w-full ">
@@ -49,11 +77,15 @@ export default function RegisterPage() {
 											type="name"
 											placeholder="Name"
 											onChange={(e) =>
-												setAuthState({...authState, name: e.target.value})
+												setAuthState({ ...authState, name: e.target.value })
 											}
 										></input>
 									</div>
 								</div>
+								<span className="text-red-400 font-semibold text-sm">
+									{" "}
+									{errors?.name}
+								</span>
 								<div>
 									<label
 										htmlFor=""
@@ -68,11 +100,15 @@ export default function RegisterPage() {
 											type="email"
 											placeholder="Email"
 											onChange={(e) =>
-												setAuthState({...authState, email: e.target.value})
+												setAuthState({ ...authState, email: e.target.value })
 											}
 										></input>
 									</div>
 								</div>
+								<span className="text-red-400 font-semibold text-sm">
+									{" "}
+									{errors?.email}
+								</span>
 								<div>
 									<div className="flex items-center justify-between">
 										<label
@@ -89,10 +125,14 @@ export default function RegisterPage() {
 											type="password"
 											placeholder="Password"
 											onChange={(e) =>
-												setAuthState({...authState, password: e.target.value})
+												setAuthState({ ...authState, password: e.target.value })
 											}
 										></input>
 									</div>
+									<span className="text-red-400 font-semibold text-sm">
+										{" "}
+										{errors?.password}
+									</span>
 								</div>
 								<div>
 									<div className="flex items-center justify-between">
@@ -117,13 +157,20 @@ export default function RegisterPage() {
 											}
 										></input>
 									</div>
+									<span className="text-red-400 font-semibold text-sm">
+										{" "}
+										{errors?.password}
+									</span>
 								</div>
 								<div>
 									<button
 										type="submit"
-										className="inline-flex w-full items-center justify-center rounded-md bg-black px-3.5 py-2.5 font-semibold leading-7 text-white hover:bg-black/80"
+										className={`${
+											loading && "bg-black/80"
+										} inline-flex contrast-200  w-full items-center justify-center rounded-md bg-black px-3.5 py-2.5 font-semibold leading-7 text-white hover:bg-black/80`}
 									>
-										Register <ArrowRight className="ml-2" size={16} />
+										{loading ? "Wait.." : "Register"}{" "}
+										<ArrowRight className="ml-2" size={16} />
 									</button>
 								</div>
 							</div>
